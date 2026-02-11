@@ -1,34 +1,40 @@
 pipeline {
 
     agent any
- 
+
     stages {
- 
-        stage('Checkout GIT') {
 
+        stage('Verify Maven') {
             steps {
-
-                echo 'Pulling...'
-
-                git branch: 'main',
-
-                    url: 'https://github.com/eyatrab123elsi/ProjetDevops.git'
-
+                sh './mvnw -version'
             }
-
         }
- 
-        stage('Testing maven') {
 
+        stage('Build') {
             steps {
-
-                sh 'mvn -version'
-
+                sh './mvnw clean compile'
             }
-
         }
- 
+
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh './mvnw clean package'
+            }
+        }
     }
 
+    post {
+        success {
+            echo 'Build SUCCESS'
+        }
+        failure {
+            echo 'Build FAILED'
+        }
+    }
 }
- 
