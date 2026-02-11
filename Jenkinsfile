@@ -1,34 +1,25 @@
 pipeline {
-
     agent any
- 
+
     stages {
- 
-        stage('Checkout GIT') {
 
+        stage('Checkout') {
             steps {
-
-                echo 'Pulling...'
-
                 git branch: 'main',
-
                     url: 'https://github.com/eyatrab123elsi/ProjetDevops.git'
-
             }
-
         }
- 
-        stage('Testing maven') {
 
+        stage('Build') {
             steps {
-
-                sh 'mvn -version'
-
+                sh './mvnw clean install'
             }
-
         }
- 
-    }
 
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+        }
+    }
 }
- 
