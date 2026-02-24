@@ -2,8 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Bien que credentials('jenkins-token') soit correct, l'utilisation
-        // de SONAR_TOKEN est la convention standard attendue par le plugin.
         SONAR_TOKEN = credentials('sonar-token')
     }
 
@@ -23,15 +21,22 @@ pipeline {
             }
         }
 
+        stage('Build Maven') {
+            steps {
+                // On compile le projet pour générer target/classes
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
-                // Le bloc withSonarQubeEnv est la méthode recommandée.
-                withSonarQubeEnv('SonarQube') { // 'SonarQube' doit correspondre au nom configuré dans Jenkins > Configure System
+                withSonarQubeEnv('SonarQube') {
                     sh '''
                     mvn sonar:sonar \
                     -Dsonar.projectKey=mon-projet \
                     -Dsonar.host.url=http://192.168.33.10:9000 \
-                    -Dsonar.login=$SONAR_TOKEN
+                    -Dsonar.login=$SONAR_TOKEN \
+                    -Dsonar.java.binaries=target/classes
                     '''
                 }
             }
