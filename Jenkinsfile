@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('jenkins-token')
+        SONAR_TOKEN = credentials('SonarQube Token')
     }
 
     stages {
