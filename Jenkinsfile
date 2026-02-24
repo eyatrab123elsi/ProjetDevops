@@ -1,44 +1,42 @@
 pipeline {
     agent any
 
-    environment {
-        SONAR_TOKEN = credentials('sonar-token')
-    }
-
     stages {
-
-        stage('Checkout GIT') {
+        stage('Start') {  // Étape Start comme dans le TP
             steps {
-                echo 'Pulling project...'
+                echo '🚀 Démarrage du pipeline...'
+            }
+        }
+
+        stage('Checkout GIT') {  // Étape GIT comme dans le TP
+            steps {
+                echo '📦 Récupération du projet...'
                 git branch: 'main',
                     url: 'https://github.com/eyatrab123elsi/ProjetDevops.git'
             }
         }
 
-        stage('Testing Maven') {
+        stage('MAVEN Build') {  // Étape MAVEN Build comme dans le TP
             steps {
-                sh 'mvn -version'
+                echo '🏗️ Compilation...'
+                sh 'mvn clean compile'
             }
         }
 
-        stage('Build Maven') {
+        stage('SONARQUBE') {  // Étape SONARQUBE comme dans le TP
+            environment {
+                SONAR_HOST_URL = 'http://192.168.33.10:9000/'
+                SONAR_AUTH_TOKEN = credentials('sonar-token')
+            }
             steps {
-                // On compile le projet pour générer target/classes
-                sh 'mvn clean package -DskipTests'
+                echo '🔍 Analyse SonarQube...'
+                sh 'mvn sonar:sonar -Dsonar.projectKey=devops_git -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_AUTH_TOKEN -Dsonar.java.binaries=target/classes'
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('End') {  // Étape End comme dans le TP
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=mon-projet \
-                    -Dsonar.host.url=http://192.168.33.10:9000 \
-                    -Dsonar.login=$SONAR_TOKEN \
-                    -Dsonar.java.binaries=target/classes
-                    '''
-                }
+                echo '✅ Pipeline terminé avec succès !'
             }
         }
     }
