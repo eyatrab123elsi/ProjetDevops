@@ -1,9 +1,10 @@
 pipeline {
-
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('SonarQube Token')
+        // Bien que credentials('jenkins-token') soit correct, l'utilisation
+        // de SONAR_TOKEN est la convention standard attendue par le plugin.
+        SONAR_TOKEN = credentials('jenkins-token')
     }
 
     stages {
@@ -24,7 +25,8 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                // Le bloc withSonarQubeEnv est la méthode recommandée.
+                withSonarQubeEnv('SonarQube') { // 'SonarQube' doit correspondre au nom configuré dans Jenkins > Configure System
                     sh '''
                     mvn sonar:sonar \
                     -Dsonar.projectKey=mon-projet \
@@ -34,6 +36,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
