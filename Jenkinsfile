@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Bien que credentials('jenkins-token') soit correct, l'utilisation
         // de SONAR_TOKEN est la convention standard attendue par le plugin.
-        SONAR_TOKEN = credentials('jenkins-token')
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
