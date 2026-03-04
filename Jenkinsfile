@@ -46,14 +46,25 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Docker Build') {
             steps {
-                echo '🐳 Construction et push de l\'image Docker...'
-                script {
-                    docker.withRegistry('', 'docker-hub-credentials') {
-                        def customImage = docker.build("${DOCKER_IMAGE}")
-                        customImage.push()
-                    }
+                echo '🐳 Construction de l\'image Docker...'
+                sh 'docker build -t eyatrabelsii/spring-k8s-app:latest .'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                echo '📤 Push de l\'image sur Docker Hub...'
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push eyatrabelsii/spring-k8s-app:latest
+                    '''
                 }
             }
         }
@@ -63,14 +74,12 @@ pipeline {
                 echo '☸️ Déploiement sur Kubernetes...'
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     sh '''
-                        # Appliquer les fichiers de configuration
                         kubectl apply -f k8s/mysql-secret.yaml
                         kubectl apply -f k8s/mysql-deployment.yaml
                         kubectl apply -f k8s/mysql-service.yaml
                         kubectl apply -f k8s/spring-deployment.yaml
                         kubectl apply -f k8s/spring-service.yaml
                         
-                        # Attendre que les déploiements soient prêts
                         kubectl rollout status deployment/spring-app -n devops
                         kubectl rollout status deployment/mysql -n devops
                     '''
@@ -80,7 +89,7 @@ pipeline {
 
         stage('Kubernetes Verify') {
             steps {
-                echo '✅ Vérification du déploiement Kubernetes...'
+                echo '✅ Vérification du déploiement...'
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     sh '''
                         echo "=== PODS ==="
@@ -101,15 +110,10 @@ pipeline {
                 echo '🧪 Test de l\'application...'
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     sh '''
-                        # Port-forward en arrière-plan
                         kubectl port-forward -n devops svc/spring-service 8888:8082 &
                         sleep 5
-                        
-                        # Tester l'API
                         curl -s http://localhost:8888/student/students/getAllStudents || echo "⚠️ API non accessible"
-                        
-                        # Arrêter le port-forward
-                        pkill -f "kubectl port-forward"
+                        pkill -f "kubectl port-forward" || true
                     '''
                 }
             }
